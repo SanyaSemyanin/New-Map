@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Интерактивная карта</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body, #map {
+            height: 100%;
+            margin: 0;
+            font-family: sans-serif;
+        }
+        .leaflet-control-layers {
+            background-color: white;
+            padding: 6px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px #aaa;
+        }
+	    .city-label {
+      font-weight: bold;
+      color: black;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 1px 4px;
+      border-radius: 3px;
+      pointer-events: none;
+      white-space: nowrap;
+      font-size: 18px;
+    }
+    </style>
+</head>
+<body>
+  <button id="toggleGrid"
+    style="position: absolute; bottom: 30px; left: 20px; z-index: 1000; background: white; border: 1px solid #ccc; padding: 5px 10px; cursor: pointer;">
+    Показать сетку
+  </button>
+<div id="map"></div>
+<div id="scaleLabel" style="position: absolute; left: 20px; bottom: 90px; background: rgba(255,255,255,0.8); padding: 4px 8px; font-size: 14px; border-radius: 3px; display: none; z-index: 1000;">
+  1 квадратик = 500 км
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map', {
+        minZoom: -4,
+        maxZoom: 8,
+        zoomControl: true,
+        center: [0, 0],
+        zoom: 0,
+        crs: L.CRS.Simple
+    });
+
+    const bounds = [[0,0], [6001, 6002]];
+
+    const gosLayer = L.imageOverlay('gos_map.png', bounds);
+    const ecoLayer = L.imageOverlay('eco_map.png', bounds);
+
+    const baseMaps = {
+        "Госкарта": gosLayer,
+        "Экокарта": ecoLayer
+    };
+
+    gosLayer.addTo(map);
+    L.control.layers(baseMaps).addTo(map);
+    map.setView([3000, 3001], -3);
+
+	const cityLabels = [
+  { name: "Гон-Конг", coords: [3556.37500, 2898.50000] },
+  { name: "Хайкоу", coords: [3613.00000, 2984.50000] },
+  { name: "Куньмин", coords: [3589.37500, 3078.00000] },
+  { name: "Доха", coords: [3741.62500, 3090.75000] },
+  { name: "Сана", coords: [3602.12500, 3297.12500] },
+  { name: "Хельсинки", coords: [4413.44172, 549.51996] },
+  { name: "Турку", coords: [4512.88344, 515.53992] },
+  { name: "Оулу", coords: [4507.13344, 664.03992] },
+  { name: "Осло", coords: [3970.69172, 741.64496] },
+  { name: "Берген", coords: [4095.94172, 612.14496] },
+  { name: "Копенгаген", coords: [3771.31672, 1112.76996] },
+  { name: "Ольборг", coords: [3878.63344, 1208.28992] },
+  { name: "Орхус", coords: [3910.69172, 852.39496] },
+  { name: "Рейкьявик", coords: [4415.25000, 1464.62500] },
+  { name: "Нуук", coords: [4369.12500, 1543.87500] },
+  { name: "Торсхавн", coords: [5046.37871, 2001.04715] },
+  { name: "Стокгольм", coords: [4067.00000, 843.12500] },
+  { name: "Гётеборг", coords: [4242.00000, 906.62500] },
+  { name: "Мальмё", coords: [3991.75000, 944.87500] },
+  { name: "Хельсингборг", coords: [4143.87500, 1053.62500] },
+  { name: "Кейптаун", coords: [1463.00000, 2067.50000] },
+  { name: "Йоханнесбург", coords: [1392.25000, 2178.50000] },
+  { name: "Дурбан", coords: [1515.25000, 2058.25000] },
+  { name: "Порт-Элизабет", coords: [1409.75000, 2025.25000] },
+  { name: "Торонто", coords: [1091.75000, 3567.00000] },
+  { name: "Монреаль", coords: [1183.75000, 3456.00000] },
+  { name: "Оттава", coords: [1073.50000, 4034.25000] },
+  { name: "Эдмонтон", coords: [1314.25000, 3865.75000] },
+  { name: "Катманду", coords: [3190.50000, 3570.00000] },
+  { name: "Амстердам", coords: [3339.34216, 2666.62866] },
+  { name: "Роттердам", coords: [3424.34216, 2655.12866] },
+  { name: "Гаага", coords: [3361.84216, 2619.37866] },
+  { name: "Гаванна", coords: [1443.97119, 3145.43285] },
+  { name: "Порт-Морсби", coords: [4957.50000, 4418.00000] },
+  { name: "Абу-Даби", coords: [3654.25000, 2890.75000] },
+  { name: "Дубай", coords: [3732.00000, 2967.75000] },
+  { name: "Шарджа", coords: [3729.50000, 3058.75000] },
+  { name: "Будапешт", coords: [3360.50000, 2547.50000] },
+  { name: "Вена", coords: [3447.50000, 2559.75000] },
+  { name: "Триполи", coords: [3116.00000, 3382.50000] },
+  { name: "Мисурата", coords: [3077.50000, 3478.25000] },
+  { name: "Дублин", coords: [3683.25000, 5261.75000] },
+  { name: "Сан-Хуан", coords: [1238.37500, 2783.75000] },
+{ name: "Веллингтон", coords: [5055.62500, 5307.87500] },
+{ name: "Никосия", coords: [3285.87500, 2058.62500] },
+{ name: "Сидней", coords: [5342.50000, 5345.50000] },
+{ name: "Мельбурн", coords: [5177.75000, 5394.50000] },
+{ name: "Брисбен", coords: [5274.62500, 5459.62500] },
+{ name: "Перт", coords: [5147.37500, 5586.25000] },
+{ name: "Манама", coords: [3779.37500, 3062.25000] },
+{ name: "Эль-Ахмади", coords: [3639.50000, 3157.87500] },
+{ name: "Эр-Рияд", coords: [3658.87500, 3528.37500] },
+{ name: "Джидда", coords: [3637.25000, 3625.25000] },
+{ name: "Мекка", coords: [3708.37500, 3498.62500] },
+{ name: "Медина", coords: [3675.37500, 3357.50000] },
+{ name: "Варшава", coords: [3469.87500, 2468.87500] },
+{ name: "Краков", coords: [3521.75000, 2514.62500] },
+{ name: "Вроцлав", coords: [3428.75000, 2440.00000] },
+{ name: "Лодзь", coords: [3502.37500, 2377.12500] },
+{ name: "Познань", coords: [3639.25000, 2451.62500] },
+{ name: "Кабул", coords: [3474.62500, 3520.75000] },
+{ name: "Герат", coords: [3388.50000, 3434.37500] },
+{ name: "Кандагар", coords: [3511.50000, 3676.25000] },
+{ name: "Багдад", coords: [3627.50000, 3130.75000] },
+{ name: "Мосул", coords: [3617.25000, 3076.25000] },
+{ name: "Басра", coords: [3698.25000, 3073.75000] },
+{ name: "Амман", coords: [3772.62500, 2801.50000] },
+{ name: "Эз-Зарка", coords: [3772.62500, 2801.50000] },
+{ name: "Иерусалим", coords: [3730.87500, 2803.00000] },
+{ name: "Тель-Авив", coords: [3702.37500, 2766.75000] },
+{ name: "Хайфа", coords: [3699.62500, 2839.37500] },
+{ name: "Газа", coords: [3688.50000, 2789.75000] },
+{ name: "Мадрид", coords: [4730.75000, 2900.25000] },
+{ name: "Барселона", coords: [4700.25000, 2820.50000] },
+{ name: "Афины", coords: [3225.12500, 2125.62500] },
+{ name: "Салоники", coords: [3290.00000, 2156.00000] },
+{ name: "Токио", coords: [4882.75000, 3481.62500] },
+{ name: "Иокогама", coords: [5013.75000, 3570.25000] },
+{ name: "Осака", coords: [5085.00000, 3453.50000] },
+{ name: "Нагоя", coords: [5191.25000, 3455.00000] },
+{ name: "Киото", coords: [4976.75000, 2833.50000] },
+{ name: "Тайбэй", coords: [4556.25000, 2973.87500] },
+{ name: "Тайчжун", coords: [4637.25000, 2970.00000] },
+{ name: "Гаосюн", coords: [4643.50000, 3022.25000] },
+{ name: "Берлин", coords: [3587.50000, 2619.75000] },
+{ name: "Гамбург", coords: [3683.00000, 2659.50000] },
+{ name: "Мюнхен", coords: [3633.50000, 2649.50000] },
+{ name: "Кёльн", coords: [3483.50000, 2580.25000] },
+{ name: "Штутгарт", coords: [3671.25000, 2559.25000] },
+{ name: "Рим", coords: [3513.00000, 2865.75000] },
+{ name: "Милан", coords: [3646.62500, 2837.75000] },
+{ name: "Венеция", coords: [3453.50000, 2754.62500] },
+{ name: "Турин", coords: [3626.50000, 2730.25000] },
+{ name: "Неаполь", coords: [3552.00000, 2744.75000] },
+{ name: "Ватикан", coords: [3516.62500, 2772.00000] },
+{ name: "Сан-Марино", coords: [3472.62500, 2726.62500] },
+{ name: "Лондон", coords: [3580.37500, 5088.50000] },
+{ name: "Манчестер", coords: [3512.25000, 4977.25000] },
+{ name: "Бирмингем", coords: [1750.25000, 5004.00000] },
+{ name: "Севастополь", coords: [3867.12500, 2796.12500] },
+{ name: "Лидс", coords: [771.25000, 4048.00000] },
+{ name: "Глазго", coords: [3842.75000, 5184.50000] },
+{ name: "Эдинбург", coords: [3787.50000, 5071.25000] },
+{ name: "Ливерпуль", coords: [3693.62500, 5055.50000] },
+{ name: "Париж", coords: [2974.37500, 2455.75000] },
+{ name: "Марсель", coords: [2850.25000, 2449.62500] },
+{ name: "Лион", coords: [3230.25000, 2651.25000] },
+{ name: "Тулуза", coords: [3325.25000, 2493.37500] },
+{ name: "Нант", coords: [3246.25000, 2477.87500] },
+{ name: "Реймс", coords: [3271.62500, 2561.00000] },
+{ name: "Мехико", coords: [943.75000, 2407.25000] },
+{ name: "Трихуана", coords: [788.50000, 2639.00000] },
+{ name: "Леон", coords: [1158.00000, 2448.75000] },
+{ name: "Пуэбла", coords: [711.87500, 2456.62500] },
+{ name: "Сьюдад-Хуарес", coords: [1472.25000, 2293.62500] },
+{ name: "Кульякан", coords: [1202.50000, 2259.75000] },
+{ name: "Котте", coords: [3164.25000, 2957.00000] },
+{ name: "Каир", coords: [3461.87500, 3276.50000] },
+{ name: "Александрия", coords: [3501.62500, 3215.00000] },
+{ name: "Гиза", coords: [3597.87500, 3531.62500] },
+{ name: "Шубра-эль-Хейма", coords: [3444.50000, 3407.25000] },
+{ name: "Анкара", coords: [3944.12500, 2918.12500] },
+{ name: "Стамбул", coords: [3935.62500, 3053.75000] },
+{ name: "Измир", coords: [4004.87500, 2978.50000] },
+{ name: "Бурса", coords: [3898.00000, 2977.37500] },
+{ name: "Анталия", coords: [3855.00000, 3004.50000] },
+{ name: "Адана", coords: [3801.00000, 2870.25000] },
+{ name: "Манила", coords: [4798.50000, 4425.87500] },
+{ name: "Давао", coords: [4770.75000, 4499.75000] },
+{ name: "Кесон-Сити", coords: [4859.50000, 4331.50000] },
+{ name: "Тегеран", coords: [3846.62500, 3445.37500] },
+{ name: "Машхад", coords: [3833.12500, 3497.37500] },
+{ name: "Исфахан", coords: [3858.50000, 3313.25000] },
+{ name: "Кардж", coords: [3938.75000, 3444.75000] },
+{ name: "Тебриз", coords: [3696.62500, 3657.62500] },
+{ name: "Кум", coords: [3940.87500, 3608.62500] },
+{ name: "Шехревар", coords: [3860.25000, 3556.12500] },
+{ name: "Дамаск", coords: [3794.25000, 2972.62500] },
+{ name: "Алеппо", coords: [3825.50000, 2939.62500] },
+{ name: "Хомс", coords: [3812.75000, 2898.12500] },
+{ name: "Ракка", coords: [3760.00000, 2911.75000] },
+{ name: "Тартус", coords: [3741.87500, 3019.00000] },
+{ name: "Сеул", coords: [4836.37500, 2686.87500] },
+{ name: "Пусан", coords: [4835.37500, 2628.25000] },
+{ name: "Исламабад", coords: [3327.37500, 3581.87500] },
+{ name: "Карачи", coords: [3571.25000, 3753.50000] },
+{ name: "Лахор", coords: [3596.00000, 3656.75000] },
+{ name: "Кветта", coords: [3232.87500, 3501.50000] },
+{ name: "Пешавар", coords: [3402.12500, 3747.00000] },
+{ name: "Мултан", coords: [3463.25000, 3675.75000] },
+{ name: "Москва", coords: [3869.87500, 2644.25000] },
+{ name: "Санкт-Петербург", coords: [4085.00000, 2118.12500] },
+{ name: "Новосибирск", coords: [4730.50000, 2376.62500] },
+{ name: "Казань", coords: [4427.75000, 2525.25000] },
+{ name: "Челябинск", coords: [4050.37500, 2372.12500] },
+{ name: "Ростов-на-Дону", coords: [3652.75000, 2231.75000] },
+{ name: "Уфа", coords: [4419.00000, 2409.62500] },
+{ name: "Омск", coords: [4193.75000, 2407.87500] },
+{ name: "Пермь", coords: [4290.87500, 2474.62500] },
+{ name: "Воронеж", coords: [3931.25000, 2540.62500] },
+{ name: "Волгоград", coords: [3889.00000, 2352.50000] },
+{ name: "Смоленск", coords: [3974.12500, 2462.00000] },
+{ name: "Киев", coords: [3889.37500, 2599.62500] },
+{ name: "Харьков", coords: [3843.25000, 2483.25000] },
+{ name: "Минск", coords: [3883.00000, 2693.00000] },
+{ name: "Вильнюс", coords: [3653.00000, 2397.50000] },
+{ name: "Рига", coords: [3610.25000, 2314.87500] },
+{ name: "Таллин", coords: [3555.87500, 2351.75000] },
+{ name: "Одесса", coords: [3771.75000, 2646.62500] },
+{ name: "Тбилиси", coords: [4045.37500, 2774.50000] },
+{ name: "Баку", coords: [4209.25000, 2781.25000] },
+{ name: "Ереван", coords: [4094.37500, 2728.00000] },
+{ name: "Астана", coords: [4317.12500, 2710.37500] },
+{ name: "Алматы", coords: [4303.87500, 2577.87500] },
+{ name: "Краснодар", coords: [4061.50000, 2602.62500] },
+{ name: "Нью-Дели", coords: [3259.62500, 3639.50000] },
+{ name: "Мумбаи", coords: [3037.87500, 3603.00000] },
+{ name: "Дели", coords: [3092.12500, 3555.62500] },
+{ name: "Сурат", coords: [3193.87500, 3692.12500] },
+{ name: "Пуна", coords: [3210.37500, 3872.75000] },
+{ name: "Джайпур", coords: [3415.12500, 3792.37500] },
+{ name: "Бхопал", coords: [3289.50000, 3760.25000] },
+{ name: "Вашингтон", coords: [849.87500, 3105.00000] },
+{ name: "Нью-Йорк", coords: [1062.87500, 3183.75000] },
+{ name: "Лос-Анджелес", coords: [710.12500, 2844.37500] },
+{ name: "Чикаго", coords: [905.87500, 3468.62500] },
+{ name: "Хьюстон", coords: [546.00000, 2878.12500] },
+{ name: "Финикс", coords: [886.12500, 2797.25000] },
+{ name: "Сан-Антонио", coords: [792.87500, 2834.37500] },
+{ name: "Сан-Диего", coords: [980.87500, 2938.62500] },
+{ name: "Даллас", coords: [735.00000, 3158.37500] },
+{ name: "Джексонвиль", coords: [753.62500, 3681.25000] },
+{ name: "Форт-Уэрт", coords: [984.37500, 3113.87500] },
+{ name: "Бостон", coords: [727.75000, 3822.37500] },
+{ name: "Майами", coords: [661.87500, 3187.00000] },
+{ name: "Сиэтл", coords: [1097.62500, 3402.62500] },
+{ name: "Филадельфия", coords: [897.37500, 3321.87500] },
+{ name: "Пекин", coords: [3319.00000, 3331.75000] },
+{ name: "Шанхай", coords: [3357.62500, 3329.50000] },
+{ name: "Чунцин", coords: [3263.50000, 3407.00000] },
+{ name: "Владивосток", coords: [4810.37500, 2547.87500] },
+{ name: "Гуанчжоу", coords: [4809.25000, 2682.50000] },
+{ name: "Чэнду", coords: [4698.50000, 2662.62500] },
+{ name: "Ухань", coords: [4681.87500, 2770.00000] },
+{ name: "Сиань", coords: [4582.75000, 2612.50000] },
+{ name: "Нанкин", coords: [4485.00000, 2532.87500] },
+{ name: "Циндао", coords: [4582.12500, 2769.87500] },
+{ name: "Далянь", coords: [4610.12500, 2890.50000] },
+{ name: "Сучжоу", coords: [4423.25000, 2882.12500] },
+{ name: "Шэньян", coords: [4434.62500, 2813.12500] },
+{ name: "Харбин", coords: [4381.12500, 2737.25000] },
+{ name: "Чанша", coords: [4230.12500, 2764.37500] }
+];
+
+// функция для отображения названий городов
+function addCityLabels() {
+  map.eachLayer(layer => {
+    if (layer.options && layer.options.pane === 'markerPane' && layer._icon && layer._icon.classList.contains('city-label')) {
+      map.removeLayer(layer);
+    }
+  });
+
+  if (map.getZoom() >= 2) {
+    cityLabels.forEach(city => {
+      L.marker(city.coords, {
+        interactive: false,
+        icon: L.divIcon({
+          className: 'city-label',
+          html: city.name,
+          iconSize: [100, 20]
+        })
+      }).addTo(map);
+    });
+  }
+}
+
+map.on('zoomend', addCityLabels);
+addCityLabels();
+
+    function enableCoordinateClick(map) {
+      map.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(5);
+        const lng = e.latlng.lng.toFixed(5);
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(`Координаты: ${lat}, ${lng}`)
+          .openOn(map);
+
+        console.log(`Широта: ${lat}, Долгота: ${lng}`);
+      });
+    }
+
+    enableCoordinateClick(map);
+
+  let gridLayer = null;
+  let gridVisible = false;
+  const scaleLabel = document.getElementById("scaleLabel");
+
+  document.getElementById("toggleGrid").addEventListener("click", function () {
+    if (!gridLayer) {
+      gridLayer = L.layerGroup();
+      const spacing = 50; // Здесь меняешь расстояние между линиями сетки
+
+      // Подставь размер карты 0..6000, если твоя карта ~6001x6002
+      for (let x = 0; x <= 6001; x += spacing) {
+        const line = L.polyline([[0, x], [6001, x]], { color: 'black', weight: 1, opacity: 0.3 });
+        gridLayer.addLayer(line);
+      }
+      for (let y = 0; y <= 6002; y += spacing) {
+        const line = L.polyline([[y, 0], [y, 6002]], { color: 'black', weight: 1, opacity: 0.3 });
+        gridLayer.addLayer(line);
+      }
+    }
+
+    if (!gridVisible) {
+      map.addLayer(gridLayer);
+      this.textContent = "Скрыть сетку";
+      scaleLabel.style.display = "block";
+    } else {
+      map.removeLayer(gridLayer);
+      this.textContent = "Показать сетку";
+      scaleLabel.style.display = "none";
+    }
+
+    gridVisible = !gridVisible;
+  });
+</script>
+</body>
+</html>
